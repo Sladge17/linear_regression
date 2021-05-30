@@ -29,12 +29,13 @@ def norm_x(x):
 	return (x_minmax, x)
 
 def set_hyperparameters(y):
-	weight = np.array([np.random.rand(), np.max(y) / 2], np.float32)
 	epochs = 100
+	error_border = 100
 	alpha = np.array([0.1, 0.01], np.float32)
-	return (weight, epochs, alpha)
+	return (epochs, error_border, alpha)
 
-def learning_nn(weight, epochs, x, y, alpha):
+def learning_nn(epochs, error_border, x, y, alpha):
+	weight = np.array([np.random.rand(), np.max(y) / 2], np.float32)
 	error = np.zeros(epochs, np.float32)
 	selection = np.array([0, 1], np.float32)
 	delta = np.zeros(2, np.float32)
@@ -42,15 +43,15 @@ def learning_nn(weight, epochs, x, y, alpha):
 		error[epoch] = np.power(np.mean(np.stack((x,
 													np.ones(x.size)),
 												1) @ weight) - np.mean(y), 2)
-		if error[epoch] < 100:
-			return error
+		if error[epoch] < error_border:
+			return weight
 		for i in range(x.size):
 			selection[0] = x[i]
 			predict = selection @ weight 
 			delta += (predict - y[i]) * selection
 		weight -= delta * alpha
 		delta[:] = 0
-	return error
+	return weight
 
 def create_weightsfile(x_minmax, weight):
 	with open("weights", 'w') as file:
@@ -63,8 +64,8 @@ def main(argv):
 	source = check_argv(argv)
 	x, y = read_data(source)
 	x_minmax, x = norm_x(x)
-	weight, epochs, alpha = set_hyperparameters(y)
-	learning_nn(weight, epochs, x, y, alpha)
+	epochs, error_border, alpha = set_hyperparameters(y)
+	weight = learning_nn(epochs, error_border, x, y, alpha)
 	create_weightsfile(x_minmax, weight)
 
 if __name__ == "__main__":
